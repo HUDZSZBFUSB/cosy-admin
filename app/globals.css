@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 250 250 250;
+    --surface: 255 255 255;
+    --border: 229 231 235;
+    --text: 15 23 42;
+    --muted: 100 116 139;
+    --brand: 99 102 241;
+  }
+  .dark {
+    --bg: 10 10 15;
+    --surface: 17 17 27;
+    --border: 30 30 46;
+    --text: 226 232 240;
+    --muted: 100 116 139;
+    --brand: 129 140 248;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    @apply antialiased;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-family: "Inter", system-ui, sans-serif;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 99px; }
+}
+
+@layer utilities {
+  .bg-surface  { background-color: rgb(var(--surface)); }
+  .bg-page     { background-color: rgb(var(--bg)); }
+  .border-base { border-color: rgb(var(--border)); }
+  .text-base   { color: rgb(var(--text)); }
+  .text-muted  { color: rgb(var(--muted)); }
+  .card {
+    @apply bg-surface border border-base rounded-2xl;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04), 0 1px 2px rgba(0,0,0,.03);
+  }
+}
