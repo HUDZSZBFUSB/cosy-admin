@@ -233,13 +233,13 @@ export default function LivePage() {
           </div>
 
           {/* Funnel bar */}
-          <div className="flex items-end gap-1 h-14 mt-1">
+          <div className="flex items-end gap-1 h-14 mt-1 overflow-hidden">
             {[atcCount, payCount, convCount].map((v, i) => {
-              const maxV = Math.max(atcCount, 1);
-              const h = Math.max(12, (v / maxV) * 56);
+              const maxV = Math.max(atcCount, payCount, convCount, 1);
+              const pct  = Math.min(100, Math.max(8, (v / maxV) * 100));
               return (
                 <div key={i} className="flex-1 rounded-sm transition-all duration-700"
-                  style={{ height: h, background: `rgba(59,130,246,${1 - i * 0.25})` }} />
+                  style={{ height: `${pct}%`, background: `rgba(59,130,246,${1 - i * 0.25})` }} />
               );
             })}
           </div>
