@@ -312,7 +312,7 @@ export default function RelancesPage() {
   const [tab, setTab]           = useState("pending"); // "pending" | "history"
 
   const [subject]    = useState("Hey, ton panier t'attend ! 🛒");
-  const [senderName] = useState("Cosy Corner");
+  const [senderName] = useState("ScreenLab");
 
   const load = useCallback(async () => {
     try {
@@ -364,7 +364,7 @@ export default function RelancesPage() {
             <div>
               <label className="text-xs font-semibold text-muted block mb-1">Expéditeur</label>
               <div className="input-base px-3 py-2 text-sm rounded-lg bg-page text-muted cursor-default">
-                Cosy Corner &lt;relance@cosy-corner.shop&gt;
+                ScreenLab &lt;relance@cosy-corner.shop&gt;
               </div>
             </div>
             <div>
