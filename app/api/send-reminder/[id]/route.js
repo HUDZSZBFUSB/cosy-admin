@@ -139,7 +139,7 @@ export async function POST(req, { params }) {
     const items = parseItems(cart.cart);
 
     const { error } = await resend.emails.send({
-      from:    process.env.RESEND_FROM || "SCREENLAB <onboarding@resend.dev>",
+      from:    process.env.RESEND_FROM || "ScreenLab <relance@cosy-corner.shop>",
       to:      cart.email,
       subject: `${cart.name?.split(" ")[0] || "Hey"}, ton panier t'attend ! 🛒`,
       html:    buildEmail({ name: cart.name, items, cart_total: cart.cart_total }),
