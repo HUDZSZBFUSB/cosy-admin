@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-import { getDb, dbLogReminder } from "@/lib/db";
+import { dbGetCheckouts, dbUpsertCheckout, dbLogReminder } from "@/lib/db";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -16,7 +16,7 @@ const SITE_URL = "https://cosy-corner.shop";
 
 function resolveImage(src) {
   if (!src) return null;
-  if (src.startsWith("data:")) return null; // data URLs non supportées dans les emails
+  if (src.startsWith("data:")) return null;
   if (src.startsWith("http")) return src;
   return SITE_URL + (src.startsWith("/") ? src : "/" + src);
 }
@@ -130,8 +130,8 @@ function buildEmail({ name, items, cart_total }) {
 
 export async function POST(req, { params }) {
   try {
-    const db    = await getDb();
-    const cart  = db.data.checkouts.find(c => String(c.id) === String(params.id));
+    const { rows: allCheckouts } = await dbGetCheckouts({ filter: "all", pageSize: 9999 });
+    const cart = allCheckouts.find(c => String(c.id) === String(params.id));
 
     if (!cart) return NextResponse.json({ error: "Panier introuvable" }, { status: 404 });
     if (!cart.email) return NextResponse.json({ error: "Pas d'email pour ce panier" }, { status: 400 });
@@ -147,12 +147,8 @@ export async function POST(req, { params }) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Marquer comme relancé + logger
-    const idx = db.data.checkouts.findIndex(c => String(c.id) === String(params.id));
-    if (idx >= 0) {
-      db.data.checkouts[idx].reminded_at = new Date().toISOString();
-      await db.write();
-    }
+    // Marquer comme relancé dans Redis
+    await dbUpsertCheckout({ ...cart, reminded_at: new Date().toISOString() });
 
     await dbLogReminder({
       checkout_id: params.id,

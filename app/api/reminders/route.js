@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { dbGetReminders, getDb } from "@/lib/db";
+import { dbGetReminders, dbGetCheckouts } from "@/lib/db";
 
 export async function GET() {
   const reminders = await dbGetReminders();
-  const db = await getDb();
+  const { rows: allCheckouts } = await dbGetCheckouts({ filter: "abandoned", pageSize: 1000 });
 
   // Paniers avec email non encore relancés
-  const toRemind = (db.data.checkouts || [])
+  const toRemind = allCheckouts
     .filter(c => !c.completed && c.email && !c.reminded_at)
     .sort((a, b) => (b.updated_at || b.created_at) > (a.updated_at || a.created_at) ? 1 : -1);
 
