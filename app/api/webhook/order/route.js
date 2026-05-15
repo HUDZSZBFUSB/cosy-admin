@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dbInsertOrder, getDb, dbMarkReminderConvertedByEmail } from "@/lib/db";
+import { dbInsertOrder, dbUpsertCheckout, dbGetCheckouts, dbMarkReminderConvertedByEmail } from "@/lib/db";
 
 const CORS = {
   "Access-Control-Allow-Origin":  "*",
@@ -72,25 +72,23 @@ export async function POST(req) {
     const ip       = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "";
     const ua       = req.headers.get("user-agent") || "";
 
-    // 1. Enregistrer la commande dans le SaaS
+    // 1. Enregistrer la commande
     await dbInsertOrder({ order_id, email, name, total, currency: "EUR", items: JSON.stringify(items), status: "paid" });
 
-    // 2. Marquer le checkout comme converti (par email ou session_id)
-    const db = await getDb();
+    // 2. Marquer le checkout comme converti
     const session_id = data.session_id || "";
-    const checkoutIdx = db.data.checkouts.findIndex((c) =>
+    const { rows: checkouts } = await dbGetCheckouts({ filter: "all", pageSize: 9999 });
+    const checkout = checkouts.find(c =>
       (email && c.email === email) || (session_id && c.session_id === session_id)
     );
-    if (checkoutIdx >= 0) {
-      db.data.checkouts[checkoutIdx].completed  = true;
-      db.data.checkouts[checkoutIdx].completed_at = new Date().toISOString();
-      await db.write();
+    if (checkout) {
+      await dbUpsertCheckout({ ...checkout, completed: true, completed_at: new Date().toISOString() });
     }
 
-    // 3. Marquer les relances associées comme converties
+    // 3. Marquer les relances comme converties
     if (email) await dbMarkReminderConvertedByEmail(email);
 
-    // 4. Fire TikTok Events API server-side
+    // 4. Fire TikTok Events API
     await fireTikTokPurchase({ order_id, email, total, items, ip, user_agent: ua });
 
     return NextResponse.json({ ok: true }, { headers: CORS });
