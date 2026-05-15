@@ -204,8 +204,8 @@ export default function LivePage() {
           />
           <StatCard
             label="Visites"
-            value={(data.recent_pageviews?.length || 0).toString()}
-            sub="10 dernières minutes"
+            value={(data.visits24h || 0).toString()}
+            sub="24 dernières heures"
             spark sparkColor="#3b82f6"
           />
           <StatCard
