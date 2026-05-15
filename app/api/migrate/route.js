@@ -7,14 +7,10 @@ export async function GET() {
   try {
     const log = [];
 
-    // Supprime les clés corrompues (type HASH au lieu de STRING)
-    await redis.del("checkouts");
-    await redis.del("orders");
     await redis.del("chk_h");
     await redis.del("ord_h");
-    log.push("clés corrompues supprimées");
+    log.push("clés hash supprimées");
 
-    // Restaure checkouts depuis le backup
     const chkBackup = await redis.get("checkouts_backup");
     if (Array.isArray(chkBackup) && chkBackup.length > 0) {
       await redis.set("checkouts", chkBackup);
@@ -25,7 +21,6 @@ export async function GET() {
       log.push("checkouts réinitialisé vide");
     }
 
-    // Restaure orders depuis le backup
     const ordBackup = await redis.get("orders_backup");
     if (Array.isArray(ordBackup) && ordBackup.length > 0) {
       await redis.set("orders", ordBackup);
