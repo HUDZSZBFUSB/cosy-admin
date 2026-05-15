@@ -3,39 +3,30 @@ import { Redis } from "@upstash/redis";
 
 const redis = Redis.fromEnv();
 
-// Migration unique : copie les anciens tableaux JSON vers les nouveaux hashes Redis
+// Restaure les backups si la migration précédente avait renommé les clés
 export async function GET() {
   try {
-    let migratedCheckouts = 0;
-    let migratedOrders    = 0;
+    let restored = [];
 
-    // ── Checkouts ──────────────────────────────────────────────────────────────
-    const oldCheckouts = await redis.get("checkouts");
-    if (Array.isArray(oldCheckouts) && oldCheckouts.length > 0) {
-      for (const c of oldCheckouts) {
-        const key = c.session_id || `sess_${c.id || Date.now()}`;
-        await redis.hset("chk_h", { [key]: c });
-        migratedCheckouts++;
-      }
-      await redis.rename("checkouts", "checkouts_backup");
+    // Restaure checkouts_backup -> checkouts si checkouts est vide/absent
+    const backup = await redis.get("checkouts_backup");
+    if (Array.isArray(backup) && backup.length > 0) {
+      await redis.set("checkouts", backup);
+      await redis.del("checkouts_backup");
+      restored.push(`${backup.length} paniers restaurés`);
     }
 
-    // ── Orders ─────────────────────────────────────────────────────────────────
-    const oldOrders = await redis.get("orders");
-    if (Array.isArray(oldOrders) && oldOrders.length > 0) {
-      for (const o of oldOrders) {
-        const key = o.order_id || `order_${o.id || Date.now()}`;
-        await redis.hset("ord_h", { [key]: o });
-        migratedOrders++;
-      }
-      await redis.rename("orders", "orders_backup");
+    // Restaure orders_backup -> orders si orders est vide/absent
+    const ordBackup = await redis.get("orders_backup");
+    if (Array.isArray(ordBackup) && ordBackup.length > 0) {
+      await redis.set("orders", ordBackup);
+      await redis.del("orders_backup");
+      restored.push(`${ordBackup.length} commandes restaurées`);
     }
 
     return NextResponse.json({
       ok: true,
-      migratedCheckouts,
-      migratedOrders,
-      message: `Migration terminée : ${migratedCheckouts} paniers + ${migratedOrders} commandes récupérés`,
+      message: restored.length > 0 ? restored.join(", ") : "Rien à restaurer, données déjà en place",
     });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
