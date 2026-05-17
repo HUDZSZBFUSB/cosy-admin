@@ -250,22 +250,40 @@ export default function LivePage() {
               {(() => {
                 const atcRate = ((data.atc24h || 0) / data.visits24h * 100).toFixed(1);
                 const payRate = ((data.payment24h || 0) / data.visits24h * 100).toFixed(1);
+                function tag(rate, type) {
+                  const r = parseFloat(rate);
+                  const th = type === "atc"
+                    ? [{ max: 3, label: "Mauvaise", bg: "#fee2e2", color: "#dc2626" },
+                       { max: 8, label: "Normale",  bg: "#fef9c3", color: "#ca8a04" },
+                       { max: 15, label: "Bonne",   bg: "#dcfce7", color: "#16a34a" },
+                       { max: Infinity, label: "Très bonne", bg: "#bbf7d0", color: "#15803d" }]
+                    : [{ max: 1, label: "Mauvaise", bg: "#fee2e2", color: "#dc2626" },
+                       { max: 3, label: "Normale",  bg: "#fef9c3", color: "#ca8a04" },
+                       { max: 6, label: "Bonne",    bg: "#dcfce7", color: "#16a34a" },
+                       { max: Infinity, label: "Très bonne", bg: "#bbf7d0", color: "#15803d" }];
+                  return th.find(t => r < t.max);
+                }
                 return [
-                  { label: "Ajout au panier",  rate: atcRate,  color: "#3b82f6" },
-                  { label: "Arrivé au checkout", rate: payRate, color: "#8b5cf6" },
-                ].map(({ label, rate, color }) => (
-                  <div key={label} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted">{label}</span>
-                      <span className="text-[13px] font-black" style={{ color }}>{rate}%</span>
+                  { label: "Ajout au panier",    rate: atcRate, color: "#3b82f6", type: "atc" },
+                  { label: "Arrivé au checkout", rate: payRate, color: "#8b5cf6", type: "pay" },
+                ].map(({ label, rate, color, type }) => {
+                  const t = tag(rate, type);
+                  return (
+                    <div key={label} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] text-muted">{label}</span>
+                        <span className="text-[13px] font-black" style={{ color }}>{rate}%</span>
+                      </div>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full w-fit"
+                        style={{ background: t.bg, color: t.color }}>{t.label}</span>
+                      <div className="h-1.5 rounded-full bg-page overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
+                      </div>
+                      <span className="text-[10px] text-muted">sur {data.visits24h} visites (24h)</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-page overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700"
-                        style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
-                    </div>
-                    <span className="text-[10px] text-muted">sur {data.visits24h} visites (24h)</span>
-                  </div>
-                ));
+                  );
+                });
               })()}
             </div>
           )}

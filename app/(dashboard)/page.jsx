@@ -5,6 +5,21 @@ import { fmt, fmtDate } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+function rateTag(rate, type) {
+  const r = parseFloat(rate);
+  const thresholds = type === "atc"
+    ? [{ max: 3, label: "Mauvaise stat", bg: "#fee2e2", color: "#dc2626" },
+       { max: 8, label: "Normale",       bg: "#fef9c3", color: "#ca8a04" },
+       { max: 15, label: "Bonne stat",   bg: "#dcfce7", color: "#16a34a" },
+       { max: Infinity, label: "Très bonne stat", bg: "#bbf7d0", color: "#15803d" }]
+    : [{ max: 1, label: "Mauvaise stat", bg: "#fee2e2", color: "#dc2626" },
+       { max: 3, label: "Normale",       bg: "#fef9c3", color: "#ca8a04" },
+       { max: 6, label: "Bonne stat",    bg: "#dcfce7", color: "#16a34a" },
+       { max: Infinity, label: "Très bonne stat", bg: "#bbf7d0", color: "#15803d" }];
+  const t = thresholds.find(t => r < t.max);
+  return t;
+}
+
 export default async function DashboardPage() {
   const { revenue, orders, visits, abandoned, converted, chart, visits24h, atc24h, payment24h } = await dbGetStats();
   const { rows: recent } = await dbGetOrders({ pageSize: 6 });
@@ -51,30 +66,40 @@ export default async function DashboardPage() {
       </div>
 
       {/* Conversion rates */}
-      {visits24h > 0 && (
-        <div className="card p-6">
-          <p className="text-sm font-bold text-base mb-1">Taux de conversion — 24h</p>
-          <p className="text-xs text-muted mb-5">Basé sur {visits24h} visites des dernières 24h</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {[
-              { label: "Ajout au panier", count: atc24h, rate: ((atc24h / visits24h) * 100).toFixed(1), color: "#3b82f6" },
-              { label: "Arrivé au checkout", count: payment24h, rate: ((payment24h / visits24h) * 100).toFixed(1), color: "#8b5cf6" },
-            ].map(({ label, count, rate, color }) => (
-              <div key={label} className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted">{label}</span>
-                  <span className="text-xl font-black" style={{ color }}>{rate}%</span>
+      {visits24h > 0 && (() => {
+        const atcRate  = ((atc24h / visits24h) * 100).toFixed(1);
+        const payRate  = ((payment24h / visits24h) * 100).toFixed(1);
+        const atcTag   = rateTag(atcRate, "atc");
+        const payTag   = rateTag(payRate, "pay");
+        return (
+          <div className="card p-6">
+            <p className="text-sm font-bold text-base mb-1">Taux de conversion — 24h</p>
+            <p className="text-xs text-muted mb-5">Basé sur {visits24h} visites des dernières 24h</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[
+                { label: "Ajout au panier",     count: atc24h,     rate: atcRate, color: "#3b82f6", tag: atcTag },
+                { label: "Arrivé au checkout",  count: payment24h, rate: payRate, color: "#8b5cf6", tag: payTag },
+              ].map(({ label, count, rate, color, tag }) => (
+                <div key={label} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-muted">{label}</span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xl font-black" style={{ color }}>{rate}%</span>
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap"
+                        style={{ background: tag.bg, color: tag.color }}>{tag.label}</span>
+                    </div>
+                  </div>
+                  <div className="h-2 rounded-full bg-page overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
+                  </div>
+                  <span className="text-xs text-muted">{count} personne{count > 1 ? "s" : ""} sur {visits24h}</span>
                 </div>
-                <div className="h-2 rounded-full bg-page overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
-                </div>
-                <span className="text-xs text-muted">{count} personne{count > 1 ? "s" : ""} sur {visits24h}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
