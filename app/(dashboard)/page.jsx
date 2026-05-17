@@ -6,7 +6,7 @@ import { fmt, fmtDate } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const { revenue, orders, visits, abandoned, converted, chart } = await dbGetStats();
+  const { revenue, orders, visits, abandoned, converted, chart, visits24h, atc24h, payment24h } = await dbGetStats();
   const { rows: recent } = await dbGetOrders({ pageSize: 6 });
   const { rows: allCheckouts } = await dbGetCheckouts({ filter: "all", pageSize: 9999 });
   const convRate = converted + abandoned > 0 ? ((converted / (converted + abandoned)) * 100).toFixed(1) : "0.0";
@@ -49,6 +49,32 @@ export default async function DashboardPage() {
           icon={<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" /></svg>}
         />
       </div>
+
+      {/* Conversion rates */}
+      {visits24h > 0 && (
+        <div className="card p-6">
+          <p className="text-sm font-bold text-base mb-1">Taux de conversion — 24h</p>
+          <p className="text-xs text-muted mb-5">Basé sur {visits24h} visites des dernières 24h</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {[
+              { label: "Ajout au panier", count: atc24h, rate: ((atc24h / visits24h) * 100).toFixed(1), color: "#3b82f6" },
+              { label: "Arrivé au checkout", count: payment24h, rate: ((payment24h / visits24h) * 100).toFixed(1), color: "#8b5cf6" },
+            ].map(({ label, count, rate, color }) => (
+              <div key={label} className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted">{label}</span>
+                  <span className="text-xl font-black" style={{ color }}>{rate}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-page overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
+                </div>
+                <span className="text-xs text-muted">{count} personne{count > 1 ? "s" : ""} sur {visits24h}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
