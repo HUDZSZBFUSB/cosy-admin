@@ -255,6 +255,16 @@ export default function LivePage() {
           ))}
         </div>
 
+        {/* Visites totales par page (24h) */}
+        {(data.pageStats?.length > 0) && (
+          <div className="card p-4 flex flex-col gap-3">
+            <p className="text-xs font-bold text-base">Visites par page <span className="text-muted font-normal">(24h)</span></p>
+            {data.pageStats.map(({ page, count }) => (
+              <LocBar key={page} label={pageLabel(page)} count={count} max={data.pageStats[0]?.count || 1} />
+            ))}
+          </div>
+        )}
+
         {/* Visits by location */}
         {locations.length > 0 && (
           <div className="card p-4 flex flex-col gap-3">
