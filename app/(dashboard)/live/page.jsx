@@ -243,6 +243,32 @@ export default function LivePage() {
               );
             })}
           </div>
+
+          {/* Taux de conversion 24h */}
+          {data.visits24h > 0 && (
+            <div className="border-t border-base pt-3 grid grid-cols-2 gap-3">
+              {(() => {
+                const atcRate = ((data.atc24h || 0) / data.visits24h * 100).toFixed(1);
+                const payRate = ((data.payment24h || 0) / data.visits24h * 100).toFixed(1);
+                return [
+                  { label: "Ajout au panier",  rate: atcRate,  color: "#3b82f6" },
+                  { label: "Arrivé au checkout", rate: payRate, color: "#8b5cf6" },
+                ].map(({ label, rate, color }) => (
+                  <div key={label} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted">{label}</span>
+                      <span className="text-[13px] font-black" style={{ color }}>{rate}%</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-page overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, parseFloat(rate))}%`, background: color }} />
+                    </div>
+                    <span className="text-[10px] text-muted">sur {data.visits24h} visites (24h)</span>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Pages actives */}
